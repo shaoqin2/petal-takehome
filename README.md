@@ -24,13 +24,14 @@ docker run -p 8090:8090 gcr.io/petal-takehome/reverseserver
 Note, I build on a M1 chip macbook so cross architecture build is required when deploying to a AMD architecture GCP. You can skip if you have a AMD already
 ```
 docker buildx build --platform linux/amd64 -t gcr.io/petal-takehome/reverseserver .
-docker tag gcr.io/petal-takehome/reverseserver gcr.io/petal-takehome/reverseserver:prod
+docker tag gcr.io/petal-takehome/reverseserver gcr.io/petal-takehome/reverseserver:prod-2022-03-27
 ```
 Push this image and deploy it to gcp cloud run. This will not work for you because project is configured to my account's project.
 Modify that in terraform to your own project or create a new workspace for your project in terraform.
 ```
-docker push gcr.io/petal-takehome/reverseserver:prod
+docker push gcr.io/petal-takehome/reverseserver:prod-2022-03-27
 cd terraform
+# modify the image string to the tag you just pushed
 terraform init
 terraform apply
 ```
@@ -41,7 +42,7 @@ https://cloudrun-srv-nwgurm3uia-uc.a.run.app
 ```
 we can hit it like this
 ```bash
-) terraform curl -H 'Content-Type:application/json' -d '{"data":"hello petal"}' https://cloudrun-srv-nwgurm3uia-uc.a.run.app/v1
+) curl -H 'Content-Type:application/json' -d '{"data":"hello petal"}' https://cloudrun-srv-nwgurm3uia-uc.a.run.app/v1
 LATEP OLLEH
 ```
 

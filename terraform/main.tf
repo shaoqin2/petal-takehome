@@ -6,7 +6,7 @@ resource "google_cloud_run_service" "default" {
   template {
     spec {
       containers {
-        image = "gcr.io/petal-takehome/reverseserver:prod"
+        image = "gcr.io/petal-takehome/reverseserver:prod-2022-03-27"
         resources {
           requests = {
             cpu    = 1
