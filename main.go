@@ -5,11 +5,13 @@ import (
 	"flag"
 	"fmt"
 	SHOUTCLOUD "github.com/RICHO/GOSHOUT"
+	"gopkg.in/retry.v1"
 	"log"
 	"net/http"
 )
 
 var port = flag.Int("port", 8090, "the port to listen on")
+var exponentialBackoff = retry.LimitCount(3, retry.Exponential{MaxDelay: 10})
 
 type reverseParams struct {
 	Data string `json:"data"`
@@ -34,16 +36,25 @@ func reverse(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// a timeout built is into this client library, though VERY janky, it has hard coded 20s and it is recreating HTTP client unnecessarily...
-	// for the sake of a take home, we won't create another timeout system around this, but any http client should have a timeout to avoid overwhelming the server with hanging requests
-	upcased, err := SHOUTCLOUD.UPCASE(ReverseString(data.Data))
-	if err != nil {
-		log.Printf("[%d] failed to contact shoutcloud.io: %s\n", http.StatusInternalServerError, err.Error())
-		http.Error(w, "server failed to query required services, please reachout to admins", http.StatusInternalServerError)
+	for a := retry.Start(exponentialBackoff, nil); a.Next(); {
+		// a timeout built is into this client library, though VERY janky, it has hard coded 20s and it is recreating HTTP client unnecessarily...
+		// for the sake of a take home, we won't create another timeout system around this, but any http client should have a timeout to avoid overwhelming the server with hanging requests
+		upcased, err := SHOUTCLOUD.UPCASE(ReverseString(data.Data))
+		if err != nil {
+			log.Printf("[%d] failed to contact shoutcloud.io: %s\n", http.StatusInternalServerError, err.Error())
+			if a.More() {
+				continue
+			} else {
+				http.Error(w, "server failed to query required upcase service, please reach out to admins", http.StatusInternalServerError)
+				return
+			}
+		}
+		log.Printf("[%d] upcased user input %s to %s", http.StatusOK, data.Data, upcased)
+		fmt.Fprintf(w, upcased)
 		return
 	}
-	log.Printf("[%d] upcased user input %s to %s", http.StatusOK, data.Data, upcased)
-	fmt.Fprintf(w, upcased)
+	// we should not reach here because either the last retry is successful and we return 200 or it didn't we return 500. But have this here just for safety
+	http.Error(w, "server failed", http.StatusInternalServerError)
 }
 
 func main() {
