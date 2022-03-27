@@ -1,6 +1,6 @@
 # Get Started
 ### One time setup
-Pre-req `gcloud`, `docker`
+Pre-req `gcloud`, `docker`, `terraform`
 ```
 gcloud auth application-default login
 gcloud auth configure-docker
